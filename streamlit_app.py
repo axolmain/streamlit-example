@@ -1,10 +1,8 @@
-import altair as alt
-import numpy as np
 import pandas as pd
 import streamlit as st
 
-
 def load_data(file):
+    # Check for file format and load data accordingly
     if file is not None:
         if file.type == 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
             df = pd.read_excel(file)
@@ -13,18 +11,18 @@ def load_data(file):
         else:
             st.error("Unsupported file format. Please upload an Excel file or a CSV.")
             return None
+        # Capitalize columns that contain 'name'
         df = capitalize_name_columns(df)
         return df
     else:
         return None
 
-
 def capitalize_name_columns(df):
+    # Capitalize all entries in columns containing 'name' in their title
     for col in df.columns:
         if 'name' in col.title():
             df[col] = df[col].apply(lambda x: x.upper() if isinstance(x, str) else x)
     return df
-
 
 def get_desired_columns(df):
     st.markdown("""
@@ -35,26 +33,24 @@ def get_desired_columns(df):
     - Phone Number (max 3 numbers, NO LANDLINES)
     - Address (all address fields)
     """)
-
+    # User selects columns to retain in the cleaned dataframe
     columns = st.multiselect("Select Columns", df.columns.tolist())
     return df[columns]
 
-
 def download_new_csv(df, file_name):
+    # Convert dataframe to CSV and create download button
     csv = df.to_csv(index=False).encode('utf-8')
     st.download_button(
         "Press to Download",
         csv,
-        "file.csv",
+        file_name,
         "text/csv",
         key='download-csv'
     )
 
-
 def main():
     st.title("File Uploader to DataFrame")
-    st.write("Upload a file (Excel, CSV, or Numbers) to create a Pandas DataFrame.")
-
+    st.write("Upload a file (Excel or CSV) to create a Pandas DataFrame.")
     file = st.file_uploader("Upload File", type=['xlsx', 'csv'])
     cleaned_df = None
 
@@ -63,13 +59,11 @@ def main():
         if df is not None:
             cleaned_df = get_desired_columns(df)
             st.write(cleaned_df)
-
         else:
             st.error("Failed to load data.")
 
     if cleaned_df is not None and len(cleaned_df.columns) >= 5:
-        download_new_csv(cleaned_df, 'file.csv')
-
+        download_new_csv(cleaned_df, 'cleaned_data.csv')
 
 if __name__ == "__main__":
     main()
