@@ -3,38 +3,65 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 
-"""
-# Welcome to Streamlit!
 
-Edit `/streamlit_app.py` to customize this app to your heart's desire :heart:.
-If you have any questions, checkout our [documentation](https://docs.streamlit.io) and [community
-forums](https://discuss.streamlit.io).
+def load_data(file):
+    if file is not None:
+        if file.type == 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
+            df = pd.read_excel(file)
+        elif file.type == 'text/csv':
+            df = pd.read_csv(file, low_memory=False)
+        else:
+            st.error("Unsupported file format. Please upload an Excel file or a CSV.")
+            return None
+        return df
+    else:
+        return None
 
-In the meantime, below is an example of what you can do with just a few lines of code:
-"""
 
-num_points = st.slider("Number of points in spiral", 1, 10000, 1100)
-num_turns = st.slider("Number of turns in spiral", 1, 300, 31)
+def get_desired_columns(df):
+    st.markdown("""
+    ## Select the columns from your spreadsheet which match the following criteria:
+    - First Name
+    - Last Name
+    - Email (if available)
+    - Phone Number (max 3 numbers, NO LANDLINES)
+    - Address (all address fields)
+    """)
 
-indices = np.linspace(0, 1, num_points)
-theta = 2 * np.pi * num_turns * indices
-radius = indices
+    columns = st.multiselect("Select Columns", df.columns.tolist())
+    return df[columns]
 
-x = radius * np.cos(theta)
-y = radius * np.sin(theta)
 
-df = pd.DataFrame({
-    "x": x,
-    "y": y,
-    "idx": indices,
-    "rand": np.random.randn(num_points),
-})
+def download_new_csv(df, file_name):
+    csv = df.to_csv(index=False).encode('utf-8')
+    st.download_button(
+        "Press to Download",
+        csv,
+        "file.csv",
+        "text/csv",
+        key='download-csv'
+    )
 
-st.altair_chart(alt.Chart(df, height=700, width=700)
-    .mark_point(filled=True)
-    .encode(
-        x=alt.X("x", axis=None),
-        y=alt.Y("y", axis=None),
-        color=alt.Color("idx", legend=None, scale=alt.Scale()),
-        size=alt.Size("rand", legend=None, scale=alt.Scale(range=[1, 150])),
-    ))
+
+def main():
+    st.title("File Uploader to DataFrame")
+    st.write("Upload a file (Excel, CSV, or Numbers) to create a Pandas DataFrame.")
+
+    file = st.file_uploader("Upload File", type=['xlsx', 'csv'])
+    cleaned_df = None
+
+    if file is not None:
+        df = load_data(file)
+        if df is not None:
+            cleaned_df = get_desired_columns(df)
+            st.write(cleaned_df)
+
+        else:
+            st.error("Failed to load data.")
+
+    if cleaned_df is not None and len(cleaned_df.columns) >= 5:
+        download_new_csv(cleaned_df, 'file.csv')
+
+
+if __name__ == "__main__":
+    main()
