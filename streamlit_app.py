@@ -13,9 +13,17 @@ def load_data(file):
         else:
             st.error("Unsupported file format. Please upload an Excel file or a CSV.")
             return None
+        df = capitalize_name_columns(df)
         return df
     else:
         return None
+
+
+def capitalize_name_columns(df):
+    for col in df.columns:
+        if 'name' in col.title():
+            df[col] = df[col].apply(lambda x: x.upper() if isinstance(x, str) else x)
+    return df
 
 
 def get_desired_columns(df):
