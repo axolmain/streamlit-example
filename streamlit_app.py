@@ -1,5 +1,7 @@
 import pandas as pd
 import streamlit as st
+from homeharvest import scrape_property
+
 
 def load_data(file):
     # Check for file format and load data accordingly
@@ -17,12 +19,16 @@ def load_data(file):
     else:
         return None
 
+
 def capitalize_name_columns(df):
-    # Capitalize all entries in columns containing 'name' in their title
+    # Iterate over the columns of the dataframe
     for col in df.columns:
-        if 'name' in col.title():
-            df[col] = df[col].apply(lambda x: x.upper() if isinstance(x, str) else x)
+        # Check if 'name' is in the column name
+        if 'name' in col.lower():
+            # Apply .title() to each value in the column
+            df[col] = df[col].apply(lambda x: x.title() if isinstance(x, str) else x)
     return df
+
 
 def get_desired_columns(df):
     st.markdown("""
@@ -35,7 +41,13 @@ def get_desired_columns(df):
     """)
     # User selects columns to retain in the cleaned dataframe
     columns = st.multiselect("Select Columns", df.columns.tolist())
+    # add button to clean data
+    st.write("Press to clean data.")
+    if st.button("Clean Data"):
+        df = capitalize_name_columns(df)
+
     return df[columns]
+
 
 def download_new_csv(df, file_name):
     # Convert dataframe to CSV and create download button
@@ -48,9 +60,23 @@ def download_new_csv(df, file_name):
         key='download-csv'
     )
 
+
+def get_zillow_data():
+    properties = scrape_property(
+        location="San Diego, CA",
+        listing_type="sold",  # or (for_sale, for_rent, pending)
+        past_days=30)
+    return properties
+
+
 def main():
     st.title("File Uploader to DataFrame")
     st.write("Upload a file (Excel or CSV) to create a Pandas DataFrame.")
+    click = st.button("Get Zillow Data")
+    if click:
+        properties = get_zillow_data()
+        st.write(properties)
+
     file = st.file_uploader("Upload File", type=['xlsx', 'csv'])
     cleaned_df = None
 
@@ -64,6 +90,7 @@ def main():
 
     if cleaned_df is not None and len(cleaned_df.columns) >= 5:
         download_new_csv(cleaned_df, 'cleaned_data.csv')
+
 
 if __name__ == "__main__":
     main()
