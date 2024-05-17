@@ -1,6 +1,5 @@
 import pandas as pd
 import streamlit as st
-from homeharvest import scrape_property
 
 
 def load_data(file):
@@ -61,22 +60,9 @@ def download_new_csv(df, file_name):
     )
 
 
-def get_zillow_data():
-    properties = scrape_property(
-        location="San Diego, CA",
-        listing_type="sold",  # or (for_sale, for_rent, pending)
-        past_days=30)
-    return properties
-
-
 def main():
     st.title("File Uploader to DataFrame")
     st.write("Upload a file (Excel or CSV) to create a Pandas DataFrame.")
-    click = st.button("Get Zillow Data")
-    if click:
-        properties = get_zillow_data()
-        st.write(properties)
-
     file = st.file_uploader("Upload File", type=['xlsx', 'csv'])
     cleaned_df = None
 
